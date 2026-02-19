@@ -92,50 +92,57 @@ def train(config: str):
     click.echo(f"Feature matrix: {features.shape[0]} subjects x {features.shape[1]} features")
 
     # Modeling (control arm only)
+    # Baseline-only features for prognostic model (digital twins)
+    # Longitudinal features capture treatment response, so they can't be used
+    # for counterfactual predictions on treated patients.
     from trialtwin.model.cox import CoxPHModel
     from trialtwin.model.evaluate import evaluate_model, save_evaluation_plots
 
+    baseline_cols = builder.baseline_cols
     control_mask = features["treatment_arm"] == "control"
-    X_control = features[control_mask].drop(columns=["subject_id", "treatment_arm"])
+    treated_mask = features["treatment_arm"] == "treatment"
+
+    X_control_baseline = features.loc[control_mask, baseline_cols]
+    X_control_all = features[control_mask].drop(columns=["subject_id", "treatment_arm"])
     os_control = os_data[control_mask]
 
+    # Prognostic model (baseline only) — used for digital twins and efficiency
     cox = CoxPHModel(penalizer=0.1)
-    cox.fit(X_control, os_control["os_time"], os_control["os_event"])
-    click.echo("\nCox PH Model Summary:")
+    cox.fit(X_control_baseline, os_control["os_time"], os_control["os_event"])
+    click.echo("\nCox PH Prognostic Model (baseline features):")
     click.echo(cox.summary().to_string())
 
-    metrics = evaluate_model(cox, X_control, os_control)
-    click.echo(f"\nControl-arm C-index: {metrics['c_index']:.3f}")
+    metrics = evaluate_model(cox, X_control_baseline, os_control)
+    click.echo(f"\nControl-arm C-index (baseline): {metrics['c_index']:.3f}")
 
     fig_dir = OUTPUT_DIR / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
-    save_evaluation_plots(cox, X_control, os_control, fig_dir)
+    save_evaluation_plots(cox, X_control_baseline, os_control, fig_dir)
 
-    # GBM model
+    # GBM model (uses all features — tree models handle collinearity)
     from trialtwin.model.gbm import GBMSurvivalModel
     gbm = GBMSurvivalModel()
-    gbm.fit(X_control, os_control["os_time"], os_control["os_event"])
-    gbm_metrics = evaluate_model(gbm, X_control, os_control)
-    click.echo(f"GBM C-index: {gbm_metrics['c_index']:.3f}")
+    gbm.fit(X_control_all, os_control["os_time"], os_control["os_event"])
+    gbm_metrics = evaluate_model(gbm, X_control_all, os_control)
+    click.echo(f"GBM C-index (all features): {gbm_metrics['c_index']:.3f}")
 
-    # Digital twins
+    # Digital twins — apply baseline prognostic model to treated patients
     from trialtwin.model.digital_twin import DigitalTwinGenerator
     dtg = DigitalTwinGenerator(cox)
 
-    treated_mask = features["treatment_arm"] == "treatment"
-    X_treated = features[treated_mask].drop(columns=["subject_id", "treatment_arm"])
+    X_treated_baseline = features.loc[treated_mask, baseline_cols]
     os_treated = os_data[treated_mask]
 
-    twins = dtg.generate_twins(X_treated, features[treated_mask]["subject_id"])
+    twins = dtg.generate_twins(X_treated_baseline, features[treated_mask]["subject_id"])
     effects = dtg.estimate_individual_treatment_effect(twins, os_treated)
     click.echo(f"\nDigital twins generated for {len(twins)} treated subjects")
     click.echo(f"Mean predicted control median: {twins['predicted_median_survival'].mean():.0f} days")
     click.echo(f"Mean individual treatment effect: {effects['treatment_effect'].mean():.0f} days")
 
-    # Efficiency simulation
+    # Efficiency simulation — prognostic score from baseline model
     from trialtwin.efficiency.simulation import run_efficiency_simulation
-    all_features = features.drop(columns=["subject_id", "treatment_arm"])
-    prognostic_scores = dtg.compute_prognostic_score(all_features)
+    all_baseline = features[baseline_cols]
+    prognostic_scores = dtg.compute_prognostic_score(all_baseline)
     efficiency = run_efficiency_simulation(
         os_data, features["treatment_arm"], prognostic_scores
     )

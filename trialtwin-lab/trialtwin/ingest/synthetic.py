@@ -109,7 +109,7 @@ class SyntheticSource(DataSource):
 
             # Clip to plausible ranges
             nrange = lab_cfg.get("normal_range", [0, np.inf])
-            labs[lab_name] = np.clip(labs[lab_name], nrange[0] * 0.3, nrange[1] * 3)
+            labs[lab_name] = np.clip(labs[lab_name], nrange[0] * 0.25, nrange[1] * 1.15)
 
         # Randomization dates (spread over 12 months for realism)
         rand_days_offset = self.rng.integers(0, 365, size=n)
@@ -230,12 +230,15 @@ class SyntheticSource(DataSource):
                 tumor += self.rng.normal(0, baseline_tumor * 0.05)
                 tumor = max(0.1, tumor)
 
-                # Lab values (random walk from baseline)
+                # Lab values (random walk from baseline, clipped to plausible range)
                 lab_values = {}
-                for lab_name in cfg.get("baseline_labs").keys():
+                for lab_name, lab_cfg in cfg.get("baseline_labs").items():
                     baseline_val = row[lab_name]
                     drift = self.rng.normal(0, baseline_val * lab_drift_std * np.sqrt(day / 30))
-                    lab_values[lab_name] = max(0.1, baseline_val + drift)
+                    val = baseline_val + drift
+                    nrange = lab_cfg.get("normal_range", [0.1, 1e6])
+                    val = np.clip(val, nrange[0] * 0.25, nrange[1])
+                    lab_values[lab_name] = max(0.1, val)
 
                 # Adverse events (higher probability for treated, increasing over time)
                 ae_prob = 0.05 + (0.1 if is_treated else 0.03) * (day / 365)
