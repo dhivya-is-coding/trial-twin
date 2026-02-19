@@ -1,0 +1,38 @@
+trial:
+  id: "GBSG2"
+  name: "German Breast Cancer Study Group 2"
+  disease: "breast_cancer"
+  source: "gbsg2"
+  arms:
+    control: "No Hormonal Therapy"
+    treatment: "Hormonal Therapy"
+
+# Column mappings from GBSG2 to unified schema
+column_mappings:
+  subject_id: "_index"  # auto-generated row index
+  treatment_arm: "horTh"
+  treatment_values:
+    control: "no"
+    treatment: "yes"
+
+baseline_mappings:
+  age: "age"
+  tumor_size: "tsize"
+  tumor_grade: "tgrade"
+  positive_nodes: "pnodes"
+  progesterone_receptor: "progrec"
+  estrogen_receptor: "estrec"
+  menopausal_status: "menostat"
+
+endpoint_mappings:
+  os_time: "time"  # recurrence-free survival time (days)
+  os_event: "cens"  # censoring indicator (1=event)
+
+features:
+  landmark_day: null  # no longitudinal data available
+  has_longitudinal: false
+
+endpoints:
+  os: true
+  pfs: false
+  binary_landmark_days: 365

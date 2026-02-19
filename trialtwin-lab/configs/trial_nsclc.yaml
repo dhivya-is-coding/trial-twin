@@ -1,0 +1,95 @@
+trial:
+  id: "SYNTH-NSCLC-001"
+  name: "Synthetic NSCLC Phase III"
+  disease: "non_small_cell_lung_cancer"
+  source: "synthetic"
+  n_subjects: 300
+  randomization_ratio: [1, 1]
+  arms:
+    control: "Docetaxel"
+    treatment: "Nivolumab"
+  seed: 42
+
+survival:
+  os_baseline_median_months: 12
+  os_shape: 1.2  # Weibull shape (>1 = increasing hazard)
+  treatment_hazard_ratio: 0.73
+  censoring_rate: 0.15
+  max_followup_months: 24
+
+demographics:
+  age:
+    mean: 62
+    std: 10
+    min: 30
+    max: 85
+  male_fraction: 0.55
+  ecog_weights: [0.3, 0.5, 0.2]  # ECOG 0, 1, 2
+  race_weights:
+    WHITE: 0.65
+    BLACK: 0.15
+    ASIAN: 0.12
+    OTHER: 0.08
+
+baseline_labs:
+  hemoglobin:
+    mean: 12.5
+    std: 2.0
+    unit: "g/dL"
+    normal_range: [12.0, 17.5]
+  ldh:
+    mean: 250
+    std: 100
+    unit: "U/L"
+    log_normal: true
+    normal_range: [140, 280]
+  albumin:
+    mean: 3.8
+    std: 0.5
+    unit: "g/dL"
+    normal_range: [3.5, 5.5]
+  neutrophils:
+    mean: 5.0
+    std: 2.5
+    unit: "10^9/L"
+    log_normal: true
+    normal_range: [1.8, 7.7]
+  lymphocytes:
+    mean: 1.5
+    std: 0.6
+    unit: "10^9/L"
+    log_normal: true
+    normal_range: [1.0, 4.8]
+
+tumor:
+  baseline_burden:
+    mean: 3.5  # log-scale (cm)
+    std: 0.8
+  growth_rate_control: 0.015  # per day
+  shrinkage_rate_treatment: -0.01  # per day initially
+  regrowth_probability: 0.4  # fraction of treated who eventually regrow
+  regrowth_onset_days:
+    mean: 120
+    std: 40
+
+longitudinal:
+  visit_days: [0, 14, 28, 42, 56, 84, 112, 168, 224, 280, 336, 365]
+  missing_rate: 0.08
+  lab_drift_std: 0.05  # per-visit random walk std (fraction of baseline)
+
+features:
+  landmark_day: 60
+
+endpoints:
+  os: true
+  pfs: true
+  binary_landmark_days: 365
+
+# Covariate effects on survival (log-hazard-ratio per unit)
+covariate_effects:
+  age: 0.02          # older = higher hazard
+  ecog: 0.5          # each ECOG step increases hazard
+  log_tumor: 0.3     # larger tumors = worse
+  log_ldh: 0.4       # higher LDH = worse
+  albumin: -0.3      # higher albumin = better (protective)
+  hemoglobin: -0.1   # higher hemoglobin = better
