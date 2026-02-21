@@ -1,6 +1,9 @@
 data/raw/
 data/processed/
-data/outputs/
+data/outputs/**
+!data/outputs/
+!data/outputs/*/
+!data/outputs/*/artifacts.pkl
 outputs/
 *.pyc
 __pycache__/
