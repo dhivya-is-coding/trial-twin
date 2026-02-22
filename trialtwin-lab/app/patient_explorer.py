@@ -80,7 +80,7 @@ def render_patient_explorer(artifacts: dict):
         yaxis_range=[0, 1.05],
         height=400,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Treatment effect
     if effects is not None:
@@ -111,5 +111,5 @@ def render_patient_explorer(artifacts: dict):
         height=250,
         margin=dict(l=0, r=0, t=10, b=0),
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width='stretch')
     st.caption("Red = increases risk, Green = decreases risk")

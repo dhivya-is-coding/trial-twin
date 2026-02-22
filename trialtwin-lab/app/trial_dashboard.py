@@ -37,7 +37,7 @@ def render_trial_dashboard(artifacts: dict, report_dir: Path):
     # KM curves by arm (interactive plotly)
     st.subheader("Kaplan-Meier Survival Curves by Treatment Arm")
     fig_km = _plot_km_plotly(os_data)
-    st.plotly_chart(fig_km, use_container_width=True)
+    st.plotly_chart(fig_km, width='stretch')
 
     # Efficiency comparison
     st.subheader("PROCOVA-style Efficiency Gain")
@@ -45,7 +45,7 @@ def render_trial_dashboard(artifacts: dict, report_dir: Path):
 
     with col_left:
         fig_eff = _plot_efficiency_plotly(efficiency)
-        st.plotly_chart(fig_eff, use_container_width=True)
+        st.plotly_chart(fig_eff, width='stretch')
 
     with col_right:
         st.markdown("**Standard Analysis (treatment only)**")
@@ -91,7 +91,7 @@ def render_trial_dashboard(artifacts: dict, report_dir: Path):
             title="Distribution of Individual Treatment Effects",
             height=350,
         )
-        st.plotly_chart(fig_te, use_container_width=True)
+        st.plotly_chart(fig_te, width='stretch')
 
     # QA report
     st.divider()
