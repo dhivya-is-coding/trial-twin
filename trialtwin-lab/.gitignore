@@ -4,7 +4,9 @@ data/outputs/**
 !data/outputs/
 !data/outputs/*/
 !data/outputs/*/artifacts.pkl
-/outputs/
+/outputs/**
+!/outputs/reports/
+!/outputs/reports/qa_report.md
 *.pyc
 __pycache__/
 .env
